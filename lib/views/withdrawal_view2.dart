@@ -9,13 +9,24 @@ class WithdrawalView extends StatefulWidget {
 class _WithdrawalViewState extends State<WithdrawalView> {
   final WithdrawalController controller = WithdrawalController();
   final TextEditingController amountController = TextEditingController();
-  List<List<int>>? result;
+  Map<int, int>? billDistribution;
 
   void withdrawMoney() {
     int? amount = int.tryParse(amountController.text);
     if (amount != null && amount > 0) {
       setState(() {
-        result = controller.getRedistribution(amount);
+        List<List<int>> result = controller.getRedistribution(amount);
+
+        // 🔹 Agrupar los billetes y contar cuántos hay de cada denominación
+        Map<int, int> groupedBills = {};
+        for (var row in result) {
+          for (var bill in row) {
+            if (bill > 0) {
+              groupedBills[bill] = (groupedBills[bill] ?? 0) + 1;
+            }
+          }
+        }
+        billDistribution = groupedBills;
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -30,14 +41,12 @@ class _WithdrawalViewState extends State<WithdrawalView> {
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-              20,
-            ), // 🔹 Hacemos la alerta más redonda
+            borderRadius: BorderRadius.circular(20),
           ),
         ),
       );
       setState(() {
-        result = null;
+        billDistribution = null;
       });
     }
   }
@@ -46,9 +55,12 @@ class _WithdrawalViewState extends State<WithdrawalView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cajero Automático", style: TextStyle(fontSize: 20)),
+        title: const Text(
+          "Cajero Automático - Solo Retiro",
+          style: TextStyle(fontSize: 20),
+        ),
         centerTitle: true,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: const Color.fromARGB(125, 68, 143, 255),
         elevation: 4,
       ),
       body: Padding(
@@ -56,7 +68,7 @@ class _WithdrawalViewState extends State<WithdrawalView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 🔹 Input con bordes redondeados y fondo gris claro
+            // 🔹 Input con bordes redondeados
             TextField(
               controller: amountController,
               keyboardType: TextInputType.number,
@@ -65,7 +77,7 @@ class _WithdrawalViewState extends State<WithdrawalView> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),
-                fillColor: Colors.grey[200],
+                fillColor: const Color.fromARGB(134, 238, 238, 238),
                 filled: true,
                 prefixIcon: const Icon(Icons.money),
               ),
@@ -90,55 +102,120 @@ class _WithdrawalViewState extends State<WithdrawalView> {
             const SizedBox(height: 20),
 
             // 🔹 Verificar si hay resultados
-            if (result != null) ...[
+            if (billDistribution != null && billDistribution!.isNotEmpty) ...[
               const Text(
                 "Distribución de billetes:",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
 
-              // 🔹 Lista de billetes en tarjetas
+              // 🔹 Lista de tarjetas con cada tipo de billete
               Expanded(
-                child: ListView.builder(
-                  itemCount: result!.length,
-                  itemBuilder: (context, index) {
-                    final row = result![index];
-                    return Card(
-                      elevation: 3,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      child: ListTile(
-                        leading: const Icon(
-                          Icons.monetization_on,
-                          color: Colors.green,
-                        ),
-                        title: Text(
-                          row.where((e) => e > 0).join(" - "),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                child: ListView(
+                  children:
+                      billDistribution!.entries.map((entry) {
+                        int billValue = entry.key;
+                        int count = entry.value;
+
+                        return Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
                           ),
-                        ),
-                      ),
-                    );
-                  },
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(25),
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color.fromARGB(255, 68, 137, 255),
+                                  Color.fromARGB(255, 61, 103, 143),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.monetization_on,
+                                        color: Colors.white,
+                                        size: 30,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        "Billetes de \$$billValue",
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+
+                                  // 🔹 Mostrar cantidad de billetes en un badge
+                                  Chip(
+                                    label: Text(
+                                      "x$count",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    backgroundColor: const Color.fromARGB(
+                                      223,
+                                      56,
+                                      142,
+                                      60,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
                 ),
               ),
 
-              // 🔹 Mostrar el total retirado en una tarjeta
+              // 🔹 Mostrar el total retirado en una tarjeta elegante
               Card(
                 color: Colors.green.shade50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
                 margin: const EdgeInsets.only(top: 10),
                 child: ListTile(
                   leading: const Icon(
                     Icons.account_balance_wallet,
                     color: Colors.green,
+                    size: 30,
                   ),
-                  title: const Text("Total retirado"),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      20,
+                    ), // 🔹 Ajusta el valor para más o menos redondez
+                  ),
+                  title: const Text(
+                    "Total retirado",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   subtitle: Text(
-                    "\$${result!.expand((e) => e).reduce((a, b) => a + b)}",
+                    "\$${billDistribution!.entries.map((e) => e.key * e.value).reduce((a, b) => a + b)}",
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
                 ),
