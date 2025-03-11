@@ -1,81 +1,110 @@
 import 'package:flutter/material.dart';
 import 'withdrawal_view2.dart';
 
-class HomeView extends StatelessWidget {
+class HomeView extends StatefulWidget {
+  @override
+  _HomeViewState createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+  bool isDarkMode = false;
+
   @override
   Widget build(BuildContext context) {
-    bool isDarkMode = false;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Bienvenido"),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
-        elevation: 4,
-      ),
-      body: Column(
-        children: [
-          // Título principal
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Text(
-              "¿Qué podemos hacer hoy por ti?",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+    return MaterialApp(
+      theme: isDarkMode ? ThemeData.dark() : ThemeData.light(),
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text("Bienvenido"),
+          centerTitle: true,
+          backgroundColor: isDarkMode ? Colors.black : Colors.blueAccent,
+          elevation: 4,
+          actions: [
+            Switch(
+              value: isDarkMode,
+              activeColor: Colors.white,
+              onChanged: (value) {
+                setState(() {
+                  isDarkMode = value;
+                });
+              },
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // Título principal
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                "¿Qué podemos hacer hoy por ti?",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : Colors.black87,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
-          ),
 
-          // Grid de opciones
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 3,
-              padding: const EdgeInsets.all(20),
-              crossAxisSpacing: 15,
-              mainAxisSpacing: 15,
-              children: [
-                OptionCard(
-                  title: "Retirar \$10000",
-                  icon: Icons.attach_money,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => WithdrawalView()),
-                    );
-                  },
-                ),
-                OptionCard(
-                  title: "Retirar \$20000",
-                  icon: Icons.money,
-                  onTap: () {},
-                ),
-                OptionCard(
-                  title: "Retirar \$50000",
-                  icon: Icons.attach_money,
-                  onTap: () {},
-                ),
-                OptionCard(
-                  title: "Retirar \$100000",
-                  icon: Icons.money,
-                  onTap: () {},
-                ),
-                OptionCard(
-                  title: "Otra Cantidad",
-                  icon: Icons.calculate,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => WithdrawalView()),
-                    );
-                  },
-                ),
-              ],
+            // Grid de opciones
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 3,
+                padding: const EdgeInsets.all(20),
+                crossAxisSpacing: 15,
+                mainAxisSpacing: 15,
+                children: [
+                  OptionCard(
+                    title: "Retirar \$10,000",
+                    icon: Icons.attach_money,
+                    isDarkMode: isDarkMode,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => WithdrawalView(),
+                        ),
+                      );
+                    },
+                  ),
+                  OptionCard(
+                    title: "Retirar \$20,000",
+                    icon: Icons.money,
+                    isDarkMode: isDarkMode,
+                    onTap: () {},
+                  ),
+                  OptionCard(
+                    title: "Retirar \$50,000",
+                    icon: Icons.attach_money,
+                    isDarkMode: isDarkMode,
+                    onTap: () {},
+                  ),
+                  OptionCard(
+                    title: "Retirar \$100,000",
+                    icon: Icons.money,
+                    isDarkMode: isDarkMode,
+                    onTap: () {},
+                  ),
+                  OptionCard(
+                    title: "Otra Cantidad",
+                    icon: Icons.calculate,
+                    isDarkMode: isDarkMode,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => WithdrawalView(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -85,11 +114,13 @@ class OptionCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final VoidCallback onTap;
+  final bool isDarkMode;
 
   const OptionCard({
     required this.title,
     required this.icon,
     required this.onTap,
+    required this.isDarkMode,
   });
 
   @override
@@ -98,11 +129,11 @@ class OptionCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDarkMode ? Colors.grey[850] : Colors.white,
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: Colors.black26,
+              color: isDarkMode ? Colors.black45 : Colors.black26,
               blurRadius: 5,
               offset: Offset(0, 3),
             ),
@@ -111,15 +142,19 @@ class OptionCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.blueAccent, size: 40),
+            Icon(
+              icon,
+              color: isDarkMode ? Colors.white : Colors.blueAccent,
+              size: 40,
+            ),
             const SizedBox(height: 8),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: isDarkMode ? Colors.white : Colors.black87,
               ),
             ),
           ],
