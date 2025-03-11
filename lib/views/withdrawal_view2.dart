@@ -1,6 +1,50 @@
 import 'package:flutter/material.dart';
 import '../controllers/withdrawal_controller.dart';
 
+Widget _buildOptionCard(
+  BuildContext context, {
+  required String title,
+  required IconData icon,
+  required Color color,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 4,
+      child: Container(
+        width: 150,
+        height: 150,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: [color.withOpacity(0.7), color],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 50, color: Colors.white),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 class WithdrawalView extends StatefulWidget {
   @override
   _WithdrawalViewState createState() => _WithdrawalViewState();
@@ -10,6 +54,7 @@ class _WithdrawalViewState extends State<WithdrawalView> {
   final WithdrawalController controller = WithdrawalController();
   final TextEditingController amountController = TextEditingController();
   Map<int, int>? billDistribution;
+  bool isDarkMode = false;
 
   void withdrawMoney() {
     int? amount = int.tryParse(amountController.text);
@@ -29,200 +74,219 @@ class _WithdrawalViewState extends State<WithdrawalView> {
         billDistribution = groupedBills;
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.warning, color: Colors.white),
-              const SizedBox(width: 10),
-              const Text("Ingrese un monto válido"),
-            ],
-          ),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              backgroundColor: Colors.redAccent,
+              title: Row(
+                children: const [
+                  Icon(Icons.warning, color: Colors.white, size: 30),
+                  SizedBox(width: 10),
+                  Text("Error", style: TextStyle(color: Colors.white)),
+                ],
+              ),
+              content: const Text(
+                "Ingrese un monto válido para el retiro.",
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    "Aceptar",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
       );
+
       setState(() {
         billDistribution = null;
       });
     }
   }
 
+  void toggleDarkMode() {
+    setState(() {
+      isDarkMode = !isDarkMode;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Cajero Automático - Solo Retiro",
-          style: TextStyle(fontSize: 20),
+    String? _errorText;
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: isDarkMode ? ThemeData.dark() : ThemeData.light(),
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text("Retiro de Dinero", style: TextStyle(fontSize: 22)),
+          centerTitle: true,
+          backgroundColor: Colors.blueAccent,
+          elevation: 4,
+          actions: [
+            IconButton(
+              icon: Icon(isDarkMode ? Icons.dark_mode : Icons.light_mode),
+              onPressed: toggleDarkMode,
+            ),
+          ],
         ),
-        centerTitle: true,
-        backgroundColor: const Color.fromARGB(125, 68, 143, 255),
-        elevation: 4,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // 🔹 Input con bordes redondeados
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: "Ingrese el monto a retirar",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                style: TextStyle(
+                  color:
+                      isDarkMode
+                          ? Colors.white
+                          : Colors.black, // Color del texto
                 ),
-                fillColor: const Color.fromARGB(134, 238, 238, 238),
-                filled: true,
-                prefixIcon: const Icon(Icons.money),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 🔹 Botón de Retirar
-            ElevatedButton.icon(
-              onPressed: withdrawMoney,
-              icon: const Icon(Icons.account_balance_wallet),
-              label: const Text("Retirar"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
-                textStyle: const TextStyle(fontSize: 16),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 20,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // 🔹 Verificar si hay resultados
-            if (billDistribution != null && billDistribution!.isNotEmpty) ...[
-              const Text(
-                "Distribución de billetes:",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-
-              // 🔹 Lista de tarjetas con cada tipo de billete
-              Expanded(
-                child: ListView(
-                  children:
-                      billDistribution!.entries.map((entry) {
-                        int billValue = entry.key;
-                        int count = entry.value;
-
-                        return Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          elevation: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(25),
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color.fromARGB(255, 68, 137, 255),
-                                  Color.fromARGB(255, 61, 103, 143),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.monetization_on,
-                                        color: Colors.white,
-                                        size: 30,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        "Billetes de \$$billValue",
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-
-                                  // 🔹 Mostrar cantidad de billetes en un badge
-                                  Chip(
-                                    label: Text(
-                                      "x$count",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    backgroundColor: const Color.fromARGB(
-                                      223,
-                                      56,
-                                      142,
-                                      60,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                ),
-              ),
-
-              // 🔹 Mostrar el total retirado en una tarjeta elegante
-              Card(
-                color: Colors.green.shade50,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                margin: const EdgeInsets.only(top: 10),
-                child: ListTile(
-                  leading: const Icon(
-                    Icons.account_balance_wallet,
-                    color: Colors.green,
-                    size: 30,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor:
+                      isDarkMode
+                          ? Colors.black54
+                          : Colors.white, // Fondo del input
+                  hintText: "Ingrese el monto a retirar",
+                  hintStyle: TextStyle(
+                    color:
+                        isDarkMode
+                            ? Colors.grey[400]
+                            : Colors.grey[700], // Color del hint
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      20,
-                    ), // 🔹 Ajusta el valor para más o menos redondez
+                  errorText: _errorText, // Mensaje de error si hay un problema
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: BorderSide(
+                      color:
+                          isDarkMode
+                              ? Colors.white
+                              : Colors.black, // Color del borde
+                    ),
                   ),
-                  title: const Text(
-                    "Total retirado",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: BorderSide(
+                      color:
+                          isDarkMode
+                              ? Colors.grey
+                              : Colors
+                                  .black, // Color del borde cuando está habilitado
+                    ),
                   ),
-                  subtitle: Text(
-                    "\$${billDistribution!.entries.map((e) => e.key * e.value).reduce((a, b) => a + b)}",
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: BorderSide(
+                      color:
+                          Colors
+                              .blueAccent, // Color cuando el input está activo
+                      width: 2,
                     ),
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: withdrawMoney,
+                icon: const Icon(Icons.account_balance_wallet),
+                label: const Text("Retirar"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  textStyle: const TextStyle(fontSize: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (billDistribution != null && billDistribution!.isNotEmpty) ...[
+                const Text(
+                  "Distribución de billetes:",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ListView(
+                    children:
+                        billDistribution!.entries.map((entry) {
+                          int billValue = entry.key;
+                          int count = entry.value;
+                          return Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            elevation: 4,
+                            child: ListTile(
+                              leading: const Icon(
+                                Icons.monetization_on,
+                                color: Colors.blueAccent,
+                                size: 30,
+                              ),
+                              title: Text("Billetes de \$$billValue"),
+                              trailing: Chip(
+                                label: Text("x$count"),
+                                backgroundColor: Colors.green,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                  ),
+                ),
+                Card(
+                  color: Colors.green.shade50,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  margin: const EdgeInsets.only(top: 10),
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.account_balance_wallet,
+                      color: Colors.green,
+                      size: 30,
+                    ),
+                    title: const Text(
+                      "Total retirado",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    subtitle: Text(
+                      "\$${billDistribution!.entries.map((e) => e.key * e.value).reduce((a, b) => a + b)}",
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void showErrorSnackbar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 3),
       ),
     );
   }

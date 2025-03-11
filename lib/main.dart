@@ -1,5 +1,5 @@
+import 'package:cajero_mys/views/Home_view.dart';
 import 'package:flutter/material.dart';
-import './views/withdrawal_view2.dart';
 
 void main() {
   runApp(ATMApp());
@@ -12,7 +12,7 @@ class ATMApp extends StatelessWidget {
       debugShowCheckedModeBanner: false, // Oculta la etiqueta de debug
       title: 'Cajero Automático',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: WithdrawalView(), // Carga la vista principal del cajero
+      home: HomeView(), // Carga la vista principal del cajero
     );
   }
 }

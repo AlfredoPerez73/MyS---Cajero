@@ -13,7 +13,7 @@ import 'package:cajero_mys/main.dart';
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(ATMApp());
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
