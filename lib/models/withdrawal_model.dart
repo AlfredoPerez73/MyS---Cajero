@@ -29,4 +29,43 @@ class WithdrawalModel {
 
     return matriz;
   }
+
+  // Método para contar billetes por denominación
+  Map<int, int> contarBilletes(List<List<int>> matriz) {
+    Map<int, int> conteo = {};
+    for (var denominacion in montos) {
+      conteo[denominacion] = 0;
+    }
+
+    for (var fila in matriz) {
+      for (int i = 0; i < fila.length; i++) {
+        if (fila[i] > 0) {
+          conteo[montos[i]] = (conteo[montos[i]] ?? 0) + 1;
+        }
+      }
+    }
+
+    return conteo;
+  }
+
+  // Método para obtener la descripción textual de los billetes
+  List<String> obtenerDescripcionBilletes(int valor) {
+    List<List<int>> matriz = redistribuir(valor);
+    Map<int, int> conteo = contarBilletes(matriz);
+
+    List<String> descripcion = [];
+    conteo.forEach((denominacion, cantidad) {
+      if (cantidad > 0) {
+        descripcion.add('$cantidad billetes de ${denominacion.toString()}');
+      }
+    });
+
+    return descripcion;
+  }
+
+  // Método para predecir retiros posibles
+  int predecirRetirosPosibles(int valor) {
+    // Estimación simple basada en el valor del retiro
+    return (200000 ~/ valor) + 1;
+  }
 }
